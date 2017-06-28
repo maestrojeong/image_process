@@ -1,5 +1,32 @@
 import numpy as np
 
+def freq_filter(img, freq = 10.0):
+    '''
+    Arg :
+        img - 2D array [height, width]
+        freq - float
+    return :
+        low pass filtered image, high pass filtered image - 2D array [height, width]
+    '''
+    fft_imag = np.fft.fft2(img)
+    height, width = fft_imag.shape
+    low_pass = np.zeros((height, width), dtype = 'complex128')
+    high_pass = np.zeros((height, width), dtype = 'complex128')
+    for h in range(height):
+        low_pass[h][0] = fft_imag[h][0]
+    for w in range(width):
+        low_pass[0][w] = fft_imag[0][w]
+
+    for h in range(1, height):
+        for w in range(1, width):
+            dist_x = min(abs(h-1), abs(height-1-h))
+            dist_y = min(abs(w-1), abs(width-1-w))
+            dist = dist_x*dist_x+dist_y*dist_y
+            low_pass[h][w] = fft_imag[h][w]*np.exp(-dist/freq/freq)
+            high_pass[h][w] = fft_imag[h][w]-low_pass[h][w]
+    
+    return np.fft.ifft2(low_pass).real, np.fft.ifft2(high_pass).real
+
 def contrast(img, degree = 0.3):
     '''
     Arg:
