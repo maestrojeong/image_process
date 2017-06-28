@@ -1,8 +1,37 @@
 import numpy as np
 
+def contrast(img, degree = 0.3):
+    '''
+    Arg:
+        img : 2D array [0,1] 
+            gray image basically dark image
+        degree : float 
+            used to delete main dark image before flatten
+    return : 
+        contrasted image dark image deleted
+    '''
+    height, width = img.shape
+    std = np.std(img)
+    for h in range(height):
+        for w in range(width):
+            if std*degree>img[h][w]:
+                img[h][w] = 0
+    return img
+
 def HSV2img(H_img, S_img, V_img):
+    '''
+    Arg :
+        H_img - 2D array [height, width]
+            each element [0, 360]
+        S_img - 2D array [height, width]
+            each element [0, 1]
+        V_img - 2D array [height, width]
+            each element [0, 1]
+    return :
+        reconst_image - 3D array [height, width, 3] 
+    '''
     height, width = H_img.shape
-    recon_image = np.zeros((height, width, 3))
+    reconst_img = np.zeros((height, width, 3))
     for h in range(height):
         for w in range(width):
             h_temp = H_img[h][w]/60
@@ -22,18 +51,23 @@ def HSV2img(H_img, S_img, V_img):
                 r,g,b = p, t, V_img[h][w]
             else:
                 r,g,b = V_img[h][w], t, n
-            recon_image[h][w][0] = r
-            recon_image[h][w][1] = g
-            recon_image[h][w][2] = b
-    return recon_image
+            reconst_img[h][w][0] = r
+            reconst_img[h][w][1] = g
+            reconst_img[h][w][2] = b
+    return reconst_img
 
 def get_HSV(img):
     '''
     Arg:
         img - 3D np array [height, weight, channel(=3)]
+            [0, 1]
     return:
-        H_img, S_img, V_img 
-            shape with [height, width]
+        H_img - 2D array [height, width]
+            []
+        S_img - 2D array [height, width]
+            [0, 1]
+        V_img - 2D array [height, width]
+            [0, 1]
     '''
     height, width, channel = img.shape
     H_img = np.zeros((height, width))
@@ -64,13 +98,19 @@ def get_HSV(img):
                 V_img[h][w] = M
                 S_img[h][w] = D/V_img[h][w]
     return H_img, S_img, V_img
+
 def get_HSI(img):
     '''
     Arg:
         img - 3D np array [height, weight, channel(=3)]
+            [0, 1]
     return:
-        H_img, S_img, L_img 
-            shape with [height, width]
+        H_img - 2D array [height, width]
+            []
+        S_img - 2D array [height, width]
+            [0, 1]
+        I_img - 2D array [height, width]
+            [0, 1]
     '''
     height, width, channel = img.shape
     H_img = np.zeros((height, width))
@@ -105,9 +145,14 @@ def get_HSL(img):
     '''
     Arg:
         img - 3D np array [height, weight, channel(=3)]
+            [0, 1]
     return:
-        H_img, S_img, L_img 
-            shape with [height, width]
+        H_img - 2D array [height, width]
+            []
+        S_img - 2D array [height, width]
+            [0, 1]
+        L_img - 2D array [height, width]
+            [0, 1]
     '''
     height, width, channel = img.shape
     H_img = np.zeros((height, width))
@@ -136,9 +181,16 @@ def get_HSL(img):
     return H_img, S_img, L_img
 
 
-def clip(x, vmax = 255, vmin = 0):
+def clip(x, vmax = 1.0, vmin = 0.0):
     '''
-        Clip the value of x between vmax(=255), and vmin(=0)
+    Arg:
+        x - float
+        vmax - float
+            default to be 1.0
+        vmin - float
+            default to be 0.0
+    return :
+        clipped x [vmin, vmax]
     '''
     if x>vmax:
         return vmax
@@ -146,26 +198,63 @@ def clip(x, vmax = 255, vmin = 0):
         return vmin
     return x
 
-def clip_2d(array, vmax = 255, vmin = 0 ): 
+def clip_2d(array, vmax = 1, vmin = 0 ):
+    '''
+    Arg:
+        array - 2D array
+        vmax - float
+            default to be 1.0
+        vmin - float
+            default to be 0.0
+    return :
+        clipped array [vmin, vmax]
+    '''
     height, width = array.shape
     clipped_array = np.zeros_like(array)
     for h in range(height):
         for w in range(width):
             clipped_array[h][w] = clip(array[h][w], vmax=vmax, vmin=vmin)
     return clipped_array
-def cycle_clip(value, turn):
+
+def cycle_clip(value, turn = 360):
+    '''
+    Default to be used as angle converter
+    ex)
+        -10 -> 350
+        370 -> 10
+    
+    Arg :
+        value - float 
+        turn - int
+    return :
+        value between [0, turn]
+    '''
     return value-turn*(int(value)//turn)
-def cycle_clip_2d(array, turn): 
+
+def cycle_clip_2d(array, turn= 360):
+    '''
+    Default to be used as angle converter for 2D array
+
+    Arg :
+        array - 2D array float 
+        turn - int
+    return :
+        array with every value between [0, turn]
+    '''
     height, width = array.shape
     clipped_array = np.zeros_like(array)
     for h in range(height):
         for w in range(width):
             clipped_array[h][w] = cycle_clip(array[h][w],turn)
     return clipped_array
+
 def conv(img, filt):
     '''
-        img : 2D np array
-        filt : 2D np array
+    Arg :
+        img - 2D array
+        filt - 2D array
+    return :
+        image convoluted with filt
     '''
     ir, ic = img.shape
     fr, fc = filt.shape
@@ -216,17 +305,22 @@ def get_mask(mask_type='prewitX'):
     mask = np.reshape(np.array(mask), [3, 3])
     return mask
 
-def rgb2gray(rgbimage, option = 0):
+def rgb2gray(rgbimg, option = 0):
     '''
-        option 0
-            Y = (Red + Green + Blue)/3
-        option 1
-            Y = Red * 0.2126 + Geeen * 0.7152 + Blue * 0.0722
-        option 2
-            Y = Red * 0.299 + Green * 0.587  + Blue * 0.114
+    Arg :
+        rgbimg - 3D array [height, weight, 3]
+        option - int 0, 1, 2 
+            option 0
+                Y = (Red + Green + Blue)/3
+            option 1
+                Y = Red * 0.2126 + Geeen * 0.7152 + Blue * 0.0722
+            option 2
+                Y = Red * 0.299 + Green * 0.587  + Blue * 0.114
+    Return :
+        grayimg - 2D array [height, weight] 
     '''
-    row, col, _= rgbimage.shape
-    grayimage = np.zeros((row, col))
+    row, col, _= rgbimg.shape
+    grayimg = np.zeros((row, col))
     option0 = [1/3, 1/3, 1/3]
     option1 = [0.2126, 0.7152, 0.0722]
     option2 = [0.299, 0.587, 0.144]
@@ -234,12 +328,17 @@ def rgb2gray(rgbimage, option = 0):
     
     for i in range(row):
         for j in range(col):
-            grayimage[i][j] = weight[option][0]*rgbimage[i][j][0] + weight[option][1]*rgbimage[i][j][1] + weight[option][2]*rgbimage[i][j][2]
-            grayimage[i][j]*=255
+            grayimg[i][j] = weight[option][0]*rgbimg[i][j][0] + weight[option][1]*rgbimg[i][j][1] + weight[option][2]*rgbimg[i][j][2]
             
-    return grayimage
+    return grayimg
 
 def flatten_img(img, option = False):
+    '''
+    Arg :
+        img - gray image [height, width]
+    result : 
+        flat-image - flatten with histogram [height, weight]
+    '''
     row, col = img.shape
     image_size = row*col
     hist = np.zeros(256, dtype = int)
@@ -250,7 +349,7 @@ def flatten_img(img, option = False):
 
     for i in range(row):
         for j in range(col):
-            hist[int(img[i][j])]+=1
+            hist[int(img[i][j]*255)]+=1
 
     cum_hist[0] = hist[0]
     for i in range(1, 256):
@@ -260,8 +359,9 @@ def flatten_img(img, option = False):
 
     for i in range(row):
         for j in range(col):
-            flat_image[i][j] = norm_cum_hist[int(img[i][j])]*255
-            hist2[int(flat_image[i][j])]+=1
+            flat_image[i][j] = norm_cum_hist[int(img[i][j]*255)]
+            hist2[int(flat_image[i][j]*255)]+=1
+
     if option:
         return hist, cum_hist, norm_cum_hist, hist2, flat_image
     else :
