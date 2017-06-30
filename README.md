@@ -1,10 +1,21 @@
 # Image process Practice
 
-## hist_flatten
+## ops.py
+Contain every image processing tools
+
+## hist_flatten.ipynb
 Flatten the image with histogram of pixels
 
-## mask
+## mask.ipynb
 Use the convolution operation with mask
 
-## HSV
-implement R,G,B and H, S, V decomposition of image
+## img_axes.ipynb
+Implement **RGB** and **HSV**, **HSI**, **HSL** decomposition of image  
+
+## reconstruct.ipynb
+1. Change **RGB** image to **HSV** image  
+2. Apply operation on **HSV** images  
+3. Change HSV to RGB image
+
+## fourier_filter.ipynb
+Use **DTFT** to apply low pass filter and high pass filter

@@ -17,10 +17,10 @@ def freq_filter(img, freq = 10.0):
     for w in range(width):
         low_pass[0][w] = fft_imag[0][w]
 
-    for h in range(1, height):
-        for w in range(1, width):
-            dist_x = min(abs(h-1), abs(height-1-h))
-            dist_y = min(abs(w-1), abs(width-1-w))
+    for h in range(height):
+        for w in range(width):
+            dist_x = min(abs(h), abs(height-h))
+            dist_y = min(abs(w), abs(width-w))
             dist = dist_x*dist_x+dist_y*dist_y
             low_pass[h][w] = fft_imag[h][w]*np.exp(-dist/freq/freq)
             high_pass[h][w] = fft_imag[h][w]-low_pass[h][w]
@@ -256,7 +256,7 @@ def cycle_clip(value, turn = 360):
     return :
         value between [0, turn]
     '''
-    return value-turn*(int(value)//turn)
+    return value-turn*(np.floor(value/turn))
 
 def cycle_clip_2d(array, turn= 360):
     '''
