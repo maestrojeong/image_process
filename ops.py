@@ -1,5 +1,61 @@
 import numpy as np
 
+def k_means(gray_img, clusters = 2):
+    '''
+    Apply k means clustering on gray_image
+    if cluster == 2 => binarize
+
+    Arg :
+        gray_img : 2D image [height, width]
+
+        clusters : int
+            number of clusters in k-means
+    Return :
+        new_img : 2D image [height, width]
+
+    '''
+    height, width = gray_img.shape
+    histogram = get_histogram(gray_img)
+    center = np.linspace(0,255, clusters)
+    sum_ = np.zeros(clusters)
+    count_ = np.zeros(clusters)
+
+    for i in range(256):
+        min_index = np.argmin(np.abs(i-center))
+        count_[min_index]+=histogram[i]
+        sum_[min_index]+=i*histogram[i]
+
+    new_center = np.zeros(clusters)
+    for i in range(clusters):
+        new_center[i] = 0 if count_[i]==0 else sum_[i]/count_[i] 
+        
+    while np.max(np.abs(new_center-center)) > 1:
+        for i in range(clusters):
+            center[i] = new_center[i]
+        sum_ = np.zeros(clusters)
+        count_ = np.zeros(clusters)
+        for i in range(256):
+            min_index = np.argmin(np.abs(i-center))
+            count_[min_index]+=histogram[i]
+            sum_[min_index]+=i*histogram[i]
+
+        new_center = np.zeros(clusters)
+        for i in range(clusters):
+            new_center[i] = 0 if count_[i]==0 else sum_[i]/count_[i] 
+
+    for i in range(clusters):
+        center[i] = new_center[i]/255
+
+    new_img = np.zeros((height, width))
+    new_color = np.linspace(0, 1, clusters)
+
+    for h in range(height):
+        for w in range(width):
+            min_index = np.argmin(np.abs(gray_img[h][w]-center))
+            new_img[h][w] = new_color[min_index]
+
+    return new_img
+
 def freq_filter(img, freq = 10.0):
     '''
     Arg :
@@ -7,6 +63,7 @@ def freq_filter(img, freq = 10.0):
         freq - float
     return :
         low pass filtered image, high pass filtered image - 2D array [height, width]
+        high pass filtered image is normalized to be [0, 1]
     '''
     fft_imag = np.fft.fft2(img)
     height, width = fft_imag.shape
@@ -25,7 +82,10 @@ def freq_filter(img, freq = 10.0):
             low_pass[h][w] = fft_imag[h][w]*np.exp(-dist/freq/freq)
             high_pass[h][w] = fft_imag[h][w]-low_pass[h][w]
     
-    return np.fft.ifft2(low_pass).real, np.fft.ifft2(high_pass).real
+    inverse_low_pass = np.fft.ifft2(low_pass).real
+    inverse_high_pass = np.fft.ifft2(high_pass).real
+    clipped_inverse_high_pass = clip_2d(inverse_high_pass-np.min(inverse_high_pass))
+    return inverse_low_pass, clipped_inverse_high_pass
 
 def contrast(img, degree = 0.3):
     '''
@@ -359,35 +419,42 @@ def rgb2gray(rgbimg, option = 0):
             
     return grayimg
 
-def flatten_img(img, option = False):
+def get_histogram(gr_img):
+    row, col = gr_img.shape
+    hist = np.zeros(256, dtype =int)
+    for i in range(row):
+        for j in range(col):
+            hist[int(gr_img[i][j]*255)]+=1
+    return hist
+
+def flatten_img(gr_img, option = False):
     '''
     Arg :
-        img - gray image [height, width]
+        gr_img - gray image [height, width]
     result : 
         flat-image - flatten with histogram [height, weight]
     '''
-    row, col = img.shape
+    row, col = gr_img.shape
     image_size = row*col
-    hist = np.zeros(256, dtype = int)
+
     cum_hist = np.zeros(256, dtype = int)
     norm_cum_hist = np.zeros(256)
     flat_image = np.zeros((row,col))
-    hist2 = np.zeros(256)
-
-    for i in range(row):
-        for j in range(col):
-            hist[int(img[i][j]*255)]+=1
+    hist = get_histogram(gr_img)
 
     cum_hist[0] = hist[0]
+    
     for i in range(1, 256):
         cum_hist[i]=cum_hist[i-1]+hist[i]
+
     for i in range(256):
         norm_cum_hist[i] = float(cum_hist[i])/image_size
 
     for i in range(row):
         for j in range(col):
-            flat_image[i][j] = norm_cum_hist[int(img[i][j]*255)]
-            hist2[int(flat_image[i][j]*255)]+=1
+            flat_image[i][j] = norm_cum_hist[int(gr_img[i][j]*255)]
+
+    hist2 = get_histogram(flat_image)
 
     if option:
         return hist, cum_hist, norm_cum_hist, hist2, flat_image

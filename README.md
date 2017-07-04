@@ -19,3 +19,7 @@ Implement **RGB** and **HSV**, **HSI**, **HSL** decomposition of image
 
 ## fourier_filter.ipynb
 Use **DTFT** to apply low pass filter and high pass filter
+
+## k-means.ipynb
+* Use k-means clustering on histogram  
+* Generalization of binarize
